@@ -1,0 +1,4 @@
+Manual de Políticas de Alma Cloud 2026:
+Todos los servidores dedicados tienen un SLA de disponibilidad garantizada del 99.99% anual.
+En caso de mantenimiento programado, la ventana es los domingos de 02:00 a 04:00 UTC.
+El tiempo máximo de respuesta para incidencias críticas P1 es de 15 minutos.

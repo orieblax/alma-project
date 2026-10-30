@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="alma-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <!-- Background with subtle border and gradient -->
+  <rect width="32" height="32" rx="8" fill="url(#alma-grad)" />
+  <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+  
+  <!-- Alma Sparkles Star Emblem -->
+  <!-- Main 4-point star -->
+  <path d="M16 6C16 11 11 16 6 16C11 16 16 21 16 26C16 21 21 16 26 16C21 16 16 11 16 6Z" fill="#ffffff" />
+  <!-- Small secondary spark -->
+  <path d="M23 7C23 8.5 21.5 10 20 10C21.5 10 23 11.5 23 13C23 11.5 24.5 10 26 10C24.5 10 23 8.5 23 7Z" fill="#c7d2fe" />
+</svg>

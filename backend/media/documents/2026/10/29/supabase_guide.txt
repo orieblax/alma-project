@@ -1,0 +1,4 @@
+Guia Oficial de Supabase en Alma Project:
+Supabase proporciona PostgreSQL con la extension pgvector nativa para indexacion de 384 dimensiones.
+Los chunks se guardan con embeddings unitarios L2 y se consultan mediante CosineDistance.
+La configuracion utiliza el Transaction Pooler en el puerto 5432 con autenticacion robusta.

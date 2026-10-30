@@ -1,0 +1,1 @@
+Politicas Cloud 2026: El SLA garantizado de disponibilidad para servidores dedicados es 99.99%. El tiempo maximo de respuesta para incidencias P1 es de 15 minutos.

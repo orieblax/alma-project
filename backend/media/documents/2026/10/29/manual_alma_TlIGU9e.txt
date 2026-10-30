@@ -1,0 +1,4 @@
+Guía de usuario para Alma Project.
+Capítulo 1: Configuración de la base de datos PostgreSQL con pgvector.
+Capítulo 2: Subida y extracción semántica de documentos.
+Capítulo 3: Respuestas aumentadas mediante recuperación de información.

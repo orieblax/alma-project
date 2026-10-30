@@ -1,0 +1,4 @@
+Manual de Operaciones y Políticas de Alma Project 2026.
+Sección 1: El tiempo de garantía para todos los productos de software es de 12 meses continuos.
+Sección 2: Todo despliegue a producción requiere aprobación del subagente QA y paso del pipeline CI/CD.
+Sección 3: El soporte prioritario está disponible 24/7 para clientes nivel Enterprise.
