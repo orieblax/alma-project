@@ -11,10 +11,15 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/ci-backend.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-backend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    name: Lint & Unit Tests
+    name: Lint, Integrity Checks & Tests
     runs-on: ubuntu-latest
 
     services:
@@ -45,6 +50,7 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
 
       - name: Install System Dependencies
         run: |
@@ -54,17 +60,35 @@ jobs:
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8
+          pip install flake8 coverage
           pip install -r requirements.txt
 
-      - name: Lint Code with Flake8
+      - name: Flake8 Code Quality & Syntax Check
         run: |
           # Stop build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # Exit-zero treats all other errors as warnings (max line length 120)
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+          # Informative style check (warns on complexity > 12, max length 120)
+          flake8 . --count --exit-zero --max-complexity=12 --max-line-length=120 --statistics
 
-      - name: Run Django Tests (PostgreSQL + pgvector)
+      - name: Verify Django System Configuration
+        env:
+          DEBUG: "False"
+          SECRET_KEY: "ci-insecure-django-secret-key-for-automated-tests"
+          USE_SQLITE: "True"
+          JWT_SECRET: "ci-jwt-secret-testing-key-123456789"
+        run: |
+          python manage.py check
+
+      - name: Detect Missing Migrations (Migration Drift Check)
+        env:
+          DEBUG: "False"
+          SECRET_KEY: "ci-insecure-django-secret-key-for-automated-tests"
+          USE_SQLITE: "True"
+          JWT_SECRET: "ci-jwt-secret-testing-key-123456789"
+        run: |
+          python manage.py makemigrations --check --dry-run
+
+      - name: Run Django Tests (PostgreSQL + pgvector Service)
         env:
           DEBUG: "False"
           SECRET_KEY: "ci-insecure-django-secret-key-for-automated-tests"
@@ -74,7 +98,12 @@ jobs:
           DB_PASSWORD: "alma_password"
           DB_HOST: "localhost"
           DB_PORT: "5432"
+          DB_SSLMODE: "disable"
           JWT_SECRET: "ci-jwt-secret-testing-key-123456789"
           EMBEDDING_DIMENSIONS: "384"
+          USE_OLLAMA: "False"
+          OLLAMA_TIMEOUT_SECONDS: "5"
+          OLLAMA_EMBED_TIMEOUT: "5"
         run: |
-          python manage.py test tests --verbosity=2
+          coverage run manage.py test tests --verbosity=2
+          coverage report -m

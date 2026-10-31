@@ -11,10 +11,15 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/ci-frontend.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-frontend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    name: Type-Check & Production Build
+    name: Lint, Type-Check & Production Build
     runs-on: ubuntu-latest
 
     defaults:
@@ -40,16 +45,18 @@ jobs:
             npm install
           fi
 
+      - name: ESLint Code Quality Check
+        run: |
+          npm run lint
+
       - name: TypeScript Type-Check
         run: |
-          if npm run | grep -q "type-check"; then
-            npm run type-check
-          else
-            npx tsc --noEmit
-          fi
+          npx tsc --noEmit
 
       - name: Next.js Production Build
         env:
           NEXT_PUBLIC_API_URL: "https://alma-backend.onrender.com"
+          NEXT_PUBLIC_SUPABASE_URL: "https://yaudeaxyjtibcotjnalt.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_EAbBLM8mHQ6OEAIgy8EMZg_ooeaQZ8R"
         run: |
           npm run build

@@ -19,7 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project code
 COPY . /app/
 
-# Collect static and prepare run
+# Expose Django port
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Run database migrations and start WSGI server with Gunicorn
+CMD ["sh", "-c", "python manage.py migrate && gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3"]

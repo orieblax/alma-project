@@ -1,5 +1,11 @@
 # Alma Project — Plataforma Empresarial de Chatbots RAG & Pipeline ETL
 
+[![Backend CI](https://github.com/Orieblax/Alma-Project/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/Orieblax/Alma-Project/actions/workflows/ci-backend.yml)
+[![Frontend CI](https://github.com/Orieblax/Alma-Project/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/Orieblax/Alma-Project/actions/workflows/ci-frontend.yml)
+[![Docker CI](https://github.com/Orieblax/Alma-Project/actions/workflows/ci-docker.yml/badge.svg)](https://github.com/Orieblax/Alma-Project/actions/workflows/ci-docker.yml)
+[![Deploy Frontend](https://github.com/Orieblax/Alma-Project/actions/workflows/deploy-vercel.yml/badge.svg)](https://github.com/Orieblax/Alma-Project/actions/workflows/deploy-vercel.yml)
+[![Deploy Backend](https://github.com/Orieblax/Alma-Project/actions/workflows/deploy-backend.yml/badge.svg)](https://github.com/Orieblax/Alma-Project/actions/workflows/deploy-backend.yml)
+
 Plataforma integral y moderna para la creación, entrenamiento e interacción con **Chatbots inteligentes impulsados por Generación Aumentada por Recuperación (RAG)** y un **Pipeline ETL automatizado de documentos**. Permite a organizaciones y usuarios cargar manuales, políticas y documentación en formatos PDF, Word (.docx), TXT y Markdown, vectorizarlos semánticamente y habilitar asistentes conversacionales de alta precisión con citación exacta de fuentes y métricas de analítica en tiempo real.
 
 ---
@@ -312,25 +318,61 @@ python manage.py test tests --verbosity=2
 
 ## Integración Continua y Despliegue (CI/CD)
 
-El proyecto cuenta con flujos de trabajo automatizados en GitHub Actions ubicados en `.github/workflows/`:
+El proyecto cuenta con flujos de trabajo profesionales automatizados en **GitHub Actions** ubicados en `.github/workflows/`:
+
+```
+.github/workflows/
+├── ci-backend.yml      # CI: Linting (Flake8), migraciones, checks y tests con pgvector
+├── ci-frontend.yml     # CI: ESLint, verificación TypeScript y compilación Next.js
+├── ci-docker.yml       # CI: Validación y caché de construcción de imagen Docker
+├── deploy-vercel.yml   # CD: Despliegue automático o manual del Frontend a Vercel
+└── deploy-backend.yml  # CD: Publicación en GHCR y trigger de deploy hook en Render
+```
 
 ### GitHub Actions Workflows
 
-1. **`ci-backend.yml` (Backend CI):**
-   - Se ejecuta en cada `push` o `pull_request` que afecte a `backend/**`.
-   - Inicializa un contenedor de servicio de **PostgreSQL con la extensión `pgvector` (`pgvector/pgvector:pg16`)**.
-   - Ejecuta análisis estático y linting con `flake8`.
-   - Ejecuta la suite de pruebas unitarias completa de Django validando la compatibilidad vectorial nativa.
+1. **`ci-backend.yml` (Backend CI — Django & pgvector):**
+   - **Disparadores:** `push` y `pull_request` en `main`, `master`, `develop` (rutas: `backend/**`, workflow) + `workflow_dispatch`.
+   - **Servicios:** Contenedor oficial de **PostgreSQL 16 con extensión `pgvector`** (`pgvector/pgvector:pg16`) con health check (`pg_isready`).
+   - **Calidad de Código:** Linting con `flake8` deteniendo el pipeline ante errores de sintaxis (`E9, F63, F7, F82`).
+   - **Verificación del Sistema:** `python manage.py check` para validar configuraciones de Django.
+   - **Detección de Deriva en Migraciones:** `python manage.py makemigrations --check --dry-run` para impedir merges con modelos modificados sin sus respectivas migraciones.
+   - **Suite de Pruebas Unitarias:** Ejecuta las 33 pruebas unitarias completas con reporte de cobertura de código (`coverage run` + `coverage report -m`).
 
-2. **`ci-frontend.yml` (Frontend CI):**
-   - Se ejecuta en cada `push` o `pull_request` que afecte a `frontend/**`.
-   - Instala las dependencias con Node.js 20.
-   - Ejecuta verificación de tipos con TypeScript (`tsc --noEmit`).
-   - Compila la aplicación en modo producción (`npm run build`).
+2. **`ci-frontend.yml` (Frontend CI — Next.js):**
+   - **Disparadores:** `push` y `pull_request` en `main`, `master`, `develop` (rutas: `frontend/**`, workflow) + `workflow_dispatch`.
+   - **Instalación:** Node.js 20 con caché de npm y `npm ci`.
+   - **Análisis Estático:** Validación con `npm run lint` (ESLint Next.js Core Web Vitals).
+   - **Tipado Estricto:** Verificación de tipos TypeScript (`npx tsc --noEmit`).
+   - **Compilación de Producción:** `npm run build` con generación estática y validación de rutas SSR.
 
-3. **`deploy-vercel.yml` (Despliegue a Vercel):**
-   - Se ejecuta al fusionar en la rama `main` o mediante ejecución manual (*workflow dispatch*).
-   - Utiliza la CLI de Vercel para compilar y desplegar los artefactos preconstruidos a producción con cero tiempo de inactividad.
+3. **`ci-docker.yml` (Docker CI — Validación de Contenedores):**
+   - **Disparadores:** `push` y `pull_request` en `main`, `master`, `develop` (rutas: `backend/**`, workflow) + `workflow_dispatch`.
+   - **Buildx & Caché GHA:** Valida la compilación limpia de `backend/Dockerfile` utilizando caché de capas de GitHub Actions (`type=gha`), asegurando que las imágenes de producción nunca presenten fallos de build.
+
+4. **`deploy-vercel.yml` (Frontend CD — Vercel Production):**
+   - **Disparadores:** `push` en la rama `main` (rutas: `frontend/**`) o ejecución manual (`workflow_dispatch`).
+   - **Control de Concurrencia:** Cancela automáticamente despliegues obsoletos en progreso (`concurrency`).
+   - **Despliegue Seguro:** Valida la existencia de secretos de Vercel. En caso de no estar configurados, notifica con advertencia informativa sin fallar de manera confusa. Con secretos configurados, compila y despliega artefactos preconstruidos a producción.
+
+5. **`deploy-backend.yml` (Backend CD — GHCR & Render Webhook):**
+   - **Disparadores:** `push` en la rama `main` (rutas: `backend/**`) o ejecución manual (`workflow_dispatch`).
+   - **GitHub Container Registry (GHCR):** Construye y publica la imagen etiquetada `ghcr.io/<usuario>/alma-backend:latest` y por hash SHA (`ghcr.io/<usuario>/alma-backend:sha-<sha>`) usando el token nativo `${{ secrets.GITHUB_TOKEN }}`.
+   - **Deploy Hook:** Si el secreto `RENDER_DEPLOY_HOOK_URL` está configurado, invoca el webhook HTTP POST de Render para disparar el despliegue automático con cero tiempo de inactividad.
+
+---
+
+### Configuración de Secretos de Repositorio (GitHub Secrets)
+
+Para habilitar los despliegues automáticos a producción, ve a tu repositorio en **Settings > Secrets and variables > Actions** y agrega:
+
+| Secreto | Requerido Por | Descripción |
+| :--- | :--- | :--- |
+| `VERCEL_TOKEN` | `deploy-vercel.yml` | Token de acceso personal generado en [Vercel Tokens](https://vercel.com/account/tokens). |
+| `VERCEL_ORG_ID` | `deploy-vercel.yml` | ID de tu equipo u organización en Vercel. |
+| `VERCEL_PROJECT_ID` | `deploy-vercel.yml` | ID del proyecto en Vercel (disponible en Project Settings). |
+| `RENDER_DEPLOY_HOOK_URL` | `deploy-backend.yml` | URL del Deploy Hook provisto por Render en los ajustes del Web Service. *(Opcional)* |
+| `GITHUB_TOKEN` | `deploy-backend.yml` | Gestionado de forma automática por GitHub Actions para publicar en GHCR. |
 
 ---
 
